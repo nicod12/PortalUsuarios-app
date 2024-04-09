@@ -5,9 +5,11 @@ import {
     updatePost, 
     deletePost
    } from "./services/apiService";
+import { ErrorMessage } from "./components/ErrorMessage";
+import { PostList } from "./components/PostList";
 
 
-interface Post {
+export interface Post {
   id: number;
   title: string;
   body: string;
@@ -15,11 +17,19 @@ interface Post {
 
 function App() {
   const [posts, setPosts] = useState<Post[]>([]);
+  const [loading, setLoading] = useState(true)
+  const [error,setError] = useState(false)
 
   useEffect(()=> {
     const getPosts = async() => {
+     try {
       const postData = await fetchPosts();
       setPosts(postData)
+     } catch (error) {
+      setError(true)
+     } finally {
+      setLoading(false)
+     }
     }
     getPosts()
   },[])
@@ -30,13 +40,12 @@ function App() {
       body: `This is an updated post ${Date.now()}`,
       userId: 1,
     }
-    console.log('Datos del post actualizado:', updatedPost);
+
 
     const post = await updatePost(id, updatedPost)
-    console.log('Respuesta de actualización del servidor:', post);
-
+  
     setPosts(posts.map((p) => p.id === id ? post : p))
-    console.log('Posts después de la actualización:', posts);
+
   }
 
   const handleDeletePost= async(id: number | string) => {
@@ -54,33 +63,18 @@ function App() {
     setPosts([post, ...posts])
   }
 
-  return(
-    <div>
-      <h1>Posts</h1>
-      <button
-       onClick={handleCreatepost}
+  return (
+    <div className="container mx-auto">
+      <h1 className="text-center" style={{margin:"20px 0px"}}>Posts</h1>
+      <button 
+        onClick={handleCreatepost}
+        className="btn btn-primary"
       >
-        Create
+        Crear Post
       </button>
-      {posts.map((post) => (
-        <article key={post.id}>
-          <h2>{post.title}</h2>
-          <p>{post.body}</p>
-          <button 
-          onClick={() => handleUpdatePost(post.id)}
-          >
-            Update
-          </button>
-          <button
-          onClick={() => handleDeletePost(post.id)}
-          >
-            Delete
-          </button>
-        </article>
-      ))}
+      {error ? <ErrorMessage /> : loading ? <h2>Loading...</h2> : <PostList posts={posts} handleUpdatePost={handleUpdatePost} handleDeletePost={handleDeletePost} />}
     </div>
-
-  )
+  );
 }
 
 export default App
